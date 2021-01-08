@@ -29,7 +29,6 @@ class HermaLikePiece:
         self.midi_stream.addTempo(0,0,self.tempo)
         events_list = sorted(self.events_list, key=operator.attrgetter('offset'))
         for e in events_list:
-            print(e.g)
             self.midi_stream.addNote(e.track, e.channel, e.h+self.origin[0], e.offset, e.u+self.origin[2], e.g+self.origin[1])
         
         with open(self.file_name, "wb") as output_file:
@@ -41,7 +40,6 @@ class HermaLikePiece:
         offset = 0
         for section in self.sections:
             section.generate_section()
-            print(len(section.events_list))
             section.offset = offset if seq else section.offset
             events = map(lambda e: SonicEvent(e.h, e.g, e.u, offset=e.offset+section.offset, track=e.track, channel=e.channel), section.events_list)
             self.events_list += events

@@ -79,3 +79,18 @@ class DynSet(EventSet):
 
     def __mul__(self, o):
         return DynSet(copy.deepcopy([e for e in self if e in o]), base=self.base, dyn_vector=self.dyn_vector.intersection(o.dyn_vector), mod=self.mod)
+
+
+class DurSet(EventSet):
+    def __init__(self, event_list, timepoints):
+        self.timepoints = timepoints
+        super().__init__(event_list)
+    
+    def __add__(self, o):
+        return DurSet(self.list+[e for e in o.list if e not in self], timepoints=self.timepoints.union(o.timepoints))
+    
+    def __sub__(self, o):
+        return DurSet([e for e in self if e not in o], timepoints=self.timepoints-o.timepoints)
+    
+    def __mul__(self, o):
+        return DurSet([e for e in self if e in o], timepoints=self.timepoints.intersection(o.timepoints)) 

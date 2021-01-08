@@ -30,6 +30,18 @@ class Section:
 
         self.duration = (sum(intervals)*self.ru) + self.events_list[-1].u
 
+class SetOrientedSection(Section):
+    def __init__(self, event_set, rhythmic_unit, offset=0):
+        super().__init__(event_set=event_set, rhythmic_unit=rhythmic_unit, offset=offset)
+    
+    def generate_offsets(self):
+        if len(self.event_set.timepoints)==0:
+            return [1]*len(self.event_set)
+        else:
+            return rd.choices(list(self.event_set.timepoints), k=len(self.event_set))
+        
+
+
 class HermaSection(Section):
     def __init__(self, event_set, length, lambda_confs=[(16,1)], offset=0, dyn=80):
         e_set = apply_dyn(event_set, dyn)
@@ -65,6 +77,12 @@ class HermaSection(Section):
         for i,e in enumerate(self.events_list):
             e.u = truncate(off_dict[e.offset], 2)
             
+'''
+PenuriaSection usa uma função de dinâmica para gerar as intensidades de cada evento sonoro.
+- Função de Dinâmica
+- Distribuição Exponencial com parâmetro lambda
+- Sorteia intervalos de tempo e eventos sonoros separadamente para combinar os timepoints
+'''
 class PenuriaSection(Section):
     def __init__(self, event_set, din_func, length, rhythmic_unit=1,
                 lamb=1, relative_offset=0, offset=0):

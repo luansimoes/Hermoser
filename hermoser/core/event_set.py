@@ -3,6 +3,19 @@ from .utils import prod
 import math
 import copy
 
+PRIME_LIST = []
+
+def prime_list():
+    if len(PRIME_LIST)==0:
+        for x in range(2,128):
+            prime = True
+            for y in range(2, int(np.sqrt(x)+1)):
+                if x%y==0:
+                    prime = False
+            if prime:
+                PRIME_LIST.append(x)
+    return PRIME_LIST
+
 class EventSet():
     def __init__(self, event_list):
         self.list = list()
@@ -49,17 +62,11 @@ class DynSet(EventSet):
         self.apply_dyn(mod)
     
     def apply_dyn(self, mod):
-        prime_list = []
-        for x in range(2,128):
-            prime = True
-            for y in range(2, int(np.sqrt(x)+1)):
-                if x%y==0:
-                    prime = False
-            if prime:
-                prime_list.append(x)
         
+        primes = prime_list()
+
         i_list = list(range(7)) if len(self.dyn_vector)==0 else self.dyn_vector
-        indexed_primes = [prime_list[i] for i in i_list]
+        indexed_primes = [primes[i] for i in i_list]
 
         if not mod:
             real_dyn = int(math.log(prod(indexed_primes), self.base))

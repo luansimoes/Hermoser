@@ -1,9 +1,11 @@
 from midiutil import MIDIFile
 from .sonic_event import SonicEvent
 import music21 as m21
+from scamp import Session, wait
 import operator
 
 # TODO : Fazer com SCAMP
+# TODO : Mudar vetor de origem
 class HermaLikePiece:
     def __init__(self, file_name, origin=(60, 0, 0), temporal_rule=lambda:1, tempo=60):
         self.temporal_rule = temporal_rule
@@ -14,7 +16,7 @@ class HermaLikePiece:
         self.origin = origin
         self.tempo=tempo
 
-        self.m21_stream = m21.stream.Score()
+        self.session = Session(self.tempo)
 
     def add_section(self, section):
         self.sections.append(section)
@@ -23,7 +25,6 @@ class HermaLikePiece:
         self.sections = sections
 
     def run_composer(self, sequential=False):
-        self.base_settings()
 
         self.generate_vectors(seq=sequential)
         self.transform_vectors_into_midi()
@@ -41,16 +42,14 @@ class HermaLikePiece:
         with open(self.file_name+".mid", "wb") as output_file:
             self.midi_stream.writeFile(output_file)
     
-    #Supõe que um elemento sonoro já é gerado pela seção com h, g, u corretos 
-    #E um offset correto dentro da seção
+    # Supõe que um evento sonoro já é gerado pela seção com h, g, u corretos 
+    # E um offset correto dentro da seção
     def generate_vectors(self, seq):
-        sol_part = self.m21_stream['sol']
         
         offset = 0
         for section in self.sections:
             if len(section.event_set)!=0:
                 text = m21.expressions.TextExpression('Transição')
-                sol_part.insert(offset, text)
 
                 section.generate_section()
                 section.offset = offset if seq else section.offset
@@ -64,35 +63,55 @@ class HermaLikePiece:
         p = ppr.read(self.file_name+".mid")
         p.plot()
 
+    def dict_insertion(self, dict, key, value):
+        if key not in dict:
+            dict[key] = [value]
+        
+        else:
+            dict[key].append(value)
+
     def transform_vectors_into_mxl(self):
-        treble = self.m21_stream['sol']
-        bass = self.m21_stream['fa']
+        '''
+            Método para exportar musicxml utilizando o SCAMP
+        '''
+        piano = self.session.new_part('piano')
 
         events_list = sorted(self.events_list, key=operator.attrgetter('offset'))
-        for e in events_list:
-            note = m21.note.Note(midi=e.h+self.origin[0])
-            note.volume = e.g
-            note.quarterLength = e.u
-            if e.h<0:
-                bass.insert(e.offset, note)
-                #treble.insert(e.offset, m21.note.Rest(duration=m21.duration.Duration(e.u)))
-            else:
-                treble.insert(e.offset, note)
-                #bass.insert(e.offset, m21.note.Rest(duration=m21.duration.Duration(e.u)))
+
+        self.session.start_transcribing()
+        self.session.fast_forward_in_time(1200)
+
+        next_offset = events_list[0].offset
+        cur_offset = 0
+        i = 0
+
+        # Actions - 0: stop, 1: start
+        note_dict = {next_offset : [(i, 1)]}
+
+        while len(note_dict.keys()) != 0:
+            
+            for id_or_index, action in note_dict.pop(cur_offset): 
+
+                if action == 1:
+                    e = events_list[id_or_index]
+                    note = piano.start_note(e.h+self.origin[0], e.g/128)
+
+                    self.dict_insertion(note_dict, e.offset+e.u, (note.note_id, 0))
+
+                    if id_or_index+1 < len(events_list):
+                        next_on = events_list[id_or_index+1].offset
+                        self.dict_insertion(note_dict, next_on, (id_or_index+1, 1))
+
+                else:
+                    piano.end_note(id_or_index)
+
+            if len(note_dict) > 0:
+                next_offset = min(note_dict.keys())
+                sleep_time = next_offset - cur_offset
+
+                wait(sleep_time)
+
+                cur_offset = next_offset
         
-        self.m21_stream.write('xml', self.file_name+".xml")
-
-
-    def base_settings(self):
-        tempo = m21.tempo.MetronomeMark(number=self.tempo)
-        self.m21_stream.insert(0, tempo)
-
-        sol_part = m21.stream.Part(id='sol')
-        sol_clef = m21.clef.TrebleClef()
-        sol_part.insert(0, sol_clef)
-        fa_part = m21.stream.Part(id='fa')
-        fa_clef = m21.clef.BassClef()
-        fa_part.insert(0, fa_clef)
-        
-        self.m21_stream.insert(0, sol_part)
-        self.m21_stream.insert(0, fa_part)
+        performance = self.session.stop_transcribing()
+        performance.to_score().export_music_xml(self.file_name+".xml")

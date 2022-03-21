@@ -2,7 +2,7 @@ import numpy as np
 import random as rd
 from .sonic_event import SonicEvent
 
-def random_size(x, low, high):
+def random_size(low, high):
     return rd.randint(low, high)
 
 def random_elements(bag, size):

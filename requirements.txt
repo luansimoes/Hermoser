@@ -1,0 +1,5 @@
+PySimpleGUI
+numpy
+midiutil
+music21
+scamp

@@ -3,7 +3,7 @@ from .sonic_event import SonicEvent
 import music21 as m21
 import operator
 
-
+# TODO : Fazer com SCAMP
 class HermaLikePiece:
     def __init__(self, file_name, origin=(60, 0, 0), temporal_rule=lambda:1, tempo=60):
         self.temporal_rule = temporal_rule

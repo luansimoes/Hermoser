@@ -39,6 +39,8 @@ def configure_so_sections(r, a, b, c, na, nb, nc):
     ]
     return sections
 
+# Configurando seções identicas ao planejamento composicional de xenakis
+# TODO : Pensar em utilizar distribuição exponencial para escolha dos offsets como fez xenakis
 def configure_xen_sections(r, a, b, c, na, nb, nc, tax):
     sections = [
         HermaSection(r, 36.5*tax, [(14*tax,1.73/tax), (23*tax,2.8/tax), (28.5*tax,4.53/tax), (32*tax,7.32/tax), (34.5*tax,11.8/tax), (36*tax,19/tax), (36.5*tax,31/tax)], offset=0, dyn=40),
@@ -90,7 +92,8 @@ def configure_xen_sections(r, a, b, c, na, nb, nc, tax):
     return sections
 
 def generate_set_oriented(filename, size):
-    #configuração para gerar os pcsets
+
+    # Configuração para gerar os pcsets
     octave = list(range(12))
     sizes=[5,5,5]
     durs = [1/8, 1/4, 1/3, 1/2, 2/3, 3/4, 1, 3/2, 2, 4]
@@ -99,14 +102,14 @@ def generate_set_oriented(filename, size):
 
     octave_sets = [random_elements(octave, sizes[0])]
 
-    #Sorteando conjuntos de pitch classes dentro das restrições
+    # Sorteando pcsets dentro das restrições
     for i in range(1,3,1):
         actual_set = random_elements(octave, sizes[i])
         while not satisfy_constraints(actual_set, octave_sets, 6):
             actual_set = random_elements(octave, sizes[i])
         octave_sets.append(actual_set)
 
-    #Ampliando os conjuntos para Pspace
+    # Ampliando os conjuntos para pspace
     pitch_list = octave if size=='octave' else (list(range(24)) if size=='two_octave' else list(range(-39, 49, 1)))
     event_sets = [[], [], []]
     for pitch in pitch_list:
@@ -115,13 +118,13 @@ def generate_set_oriented(filename, size):
                 event_sets[i].append(SonicEvent(pitch, 80, 0))
 
     dur_sets = [set(rd.choices(list(durs), k=7)) for j in range(3)]
-    d_vectors = [set(rd.choices(list(range(24)), k=random_size(i, 10, 28))) for i in range(3)]
+    d_vectors = [set(rd.choices(list(range(24)), k=random_size(10, 28))) for i in range(3)]
 
     #Conjuntos Base
     r = FullSet([SonicEvent(e, 80, 0) for e in pitch_list], set(durs), base=base, dyn_vector=d_vector)
     a = FullSet(event_sets[0], dur_sets[0], base=base, dyn_vector=d_vectors[0])
-    b = FullSet(event_sets[1], dur_sets[1], base=base, dyn_vector=d_vectors[0])
-    c = FullSet(event_sets[2], dur_sets[2], base=base, dyn_vector=d_vectors[0])
+    b = FullSet(event_sets[1], dur_sets[1], base=base, dyn_vector=d_vectors[1])
+    c = FullSet(event_sets[2], dur_sets[2], base=base, dyn_vector=d_vectors[2])
 
     na = r-a
     nb = r-b
@@ -156,33 +159,48 @@ def generate_xenakis(filename, size):
 
 
 def generate_material(config):
+    '''
+        Gera o material baseado no método escolhido
+    '''
     filename, size, method = config
+
     if method=='set_oriented':
         generate_set_oriented(filename, size)
     else:
         generate_xenakis(filename, size)
 
+
 def main_operation(fields):
+    '''
+        Método que inicializa a geração dos materiais caso os campos estejam corretamente preenchidos
+    '''
     valid = check_valid_fields(fields)
+
     if valid:
+
         size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
         method = 'xenakis' if fields['xenakis'] else 'set_oriented'
         configs = (fields['filename'], size, method)
+
         generate_material(configs)
+
     else:
         #TODO: Popup window ou alerta avisando os campos incorretos
         pass
 
 
+if __name__ == '__main__':
 
-interface = HermaInterface()
+    # Inicializa a Interface
+    interface = HermaInterface()
 
-event, values = interface.run()
-while event != sg.WINDOW_CLOSED:
-    if event == 'Gerar Material':
-        main_operation(values)
-
+    # Exibe a interface e espera por eventos
     event, values = interface.run()
+    while event != sg.WINDOW_CLOSED:
+        if event == 'Gerar Material':
+            main_operation(values)
+
+        event, values = interface.run()
 
 
 #HermoserApp().run()

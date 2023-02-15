@@ -6,50 +6,8 @@ from math import factorial
 def random_size(low, high):
     return rd.randint(low, high)
 
-def random_elements(bag, size):
-    output = []
-    while len(output)<size:
-        e = rd.choice(bag)
-        if e not in [x.h for x in output]: output.append(SonicEvent(e, 80, 0))
-    return output
 
-def random_complete_sets(bag, sizes):
-    bag_aux = [x for x in bag]
-    chunks = [int(s/4) for s in sizes]
-
-    abc = rd.randint(1, chunks[0])
-    ab = rd.randint(1, 2*chunks[0]-abc)
-    ac = rd.randint(1, 3*chunks[0]-(abc+ab))
-    a = sizes[0] - (abc+ab+ac)
-
-    bc = rd.randint(1, 3*chunks[1]-(abc+ab))
-    b = sizes[1] - (abc+ab+bc)
-
-    c = sizes[2] - (abc+ac+bc)
-
-
-    parts = [abc, ab, ac, bc, a, b, c]
-    print(parts, sum(parts), len(bag))
-    part_list = []
-
-    for p in parts:
-        part = []
-        for _ in range(p):
-            part.append(bag_aux.pop(rd.randint(0, len(bag_aux)-1)))
-        part_list.append(part)
-    
-    a = part_list[0]+part_list[1]+part_list[2]+part_list[4]
-    b = part_list[0]+part_list[1]+part_list[3]+part_list[5]
-    c = part_list[0]+part_list[2]+part_list[3]+part_list[6]
-
-    a = [SonicEvent(e, 80, 0) for e in a]
-    b = [SonicEvent(e, 80, 0) for e in b]
-    c = [SonicEvent(e, 80, 0) for e in c]
-
-    return a, b, c
-
-
-def generate_partitioned_sets(bag, nr_of_main_sets):
+def generate_partitioned_sets(bag, nr_of_main_sets, event = True):
 
     nr_of_subsets = 2**nr_of_main_sets
 
@@ -58,33 +16,35 @@ def generate_partitioned_sets(bag, nr_of_main_sets):
     partition = random_size_partition(len(bag), nr_of_subsets)
     all_subset_labels = list(all_subsets(nr_of_main_sets))
 
-    pitch_partition = dict()
+    el_partition = dict()
 
     bag_aux = [x for x in bag]
 
     for i, size in enumerate(partition):
         part = []
         for _ in range(size):
-            part.append( SonicEvent( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) , 80 , 1 ))
+
+            if event:
+                part.append( SonicEvent( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) , 80 , 1 ))
+            else:
+                part.append( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) )
         
-        pitch_partition[all_subset_labels[i]] = part
+        el_partition[all_subset_labels[i]] = part
 
     sets = []
     for i in range(nr_of_main_sets):
 
         s = []
-        for label in pitch_partition.keys():
+        for label in el_partition.keys():
 
             if str(i) in label:
-                p_list = pitch_partition[label]
-                print(i, [x.h for x in p_list])
+                p_list = el_partition[label]
                 s += p_list
             
         sets.append(s)
 
 
-    return sets, pitch_partition
-
+    return sets, el_partition
 
 def random_size_partition(n, k):
 

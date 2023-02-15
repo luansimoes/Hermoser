@@ -24,6 +24,7 @@ class HermoserApp(MDApp):
         return screen
 '''
 
+# TODO: Create a Different Screen for generating as Xenakis and as SetOriented
 class HermaInterface:
     def __init__(self):
         sg.theme('DarkTanBlue')
@@ -34,6 +35,7 @@ class HermaInterface:
             [sg.Push(), sg.Radio('12', 'type', key='octave'), sg.Radio('24', 'type', key='two_octave'), sg.Radio('88', 'type', key='88'), sg.Push()],
             [sg.Text('Method', size=(10,0))], 
             [sg.Push(), sg.Radio('Xenakis', 'method', key='xenakis'), sg.Radio('Set-Oriented', 'method', key='set_oriented'), sg.Push()],
+            [sg.Text('Interval Constraint', size=(10,0)), sg.Input(size=(10,0), key='constraint')],
             [sg.Push(), sg.Button('Generate'), sg.Push()],
         ]
         self.window = sg.Window("Hermoser", layout, font='System')

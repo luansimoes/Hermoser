@@ -12,7 +12,9 @@ def check_valid_fields(fields):
         return False
     if not(fields['xenakis'] or fields['set_oriented']):
         return False
-    
+    if fields['set_oriented'] and (not fields['constraint'] or not fields['constraint'].isnumeric()):
+        return False
+
     return True
 
 def configure_so_sections(r, a, b, c, na, nb, nc):
@@ -94,20 +96,18 @@ def configure_xen_sections(r, a, b, c, na, nb, nc, tax):
 
     return sections
 
-def generate_set_oriented(filename, size):
+def generate_set_oriented(filename, size, constraint):
 
     # Configuração para gerar os pcsets
     octave = list(range(12))
-    sizes=[5,5,5]
     durs = [1/8, 1/4, 1/3, 1/2, 2/3, 3/4, 1, 3/2, 2, 4]
     base = 2 #1.265
     d_vector = set(list(range(24)))
 
-    #octave_sets = [random_elements(octave, sizes[0])]
+    # Distribuindo as alturas e conferindo as restrições
     #TODO: Allow different numbers of sets
     octave_sets, part_dict = generate_partitioned_sets(octave, XENAKIS_NR_OF_SETS) 
-
-    while not satisfy_constraints(octave_sets, INTERVAL_CONSTRAINT):
+    while not satisfy_constraints(octave_sets, constraint):
         octave_sets, part_dict = generate_partitioned_sets(octave, XENAKIS_NR_OF_SETS)
 
     # Ampliando os conjuntos para pspace
@@ -118,14 +118,17 @@ def generate_set_oriented(filename, size):
             if pitch%12 in [e.h for e in s]:
                 event_sets[i].append(SonicEvent(pitch, 80, 1))
 
-    dur_sets = [set(rd.choices(list(durs), k=7)) for j in range(3)]
-    d_vectors = [set(rd.choices(list(range(24)), k=random_size(10, 28))) for i in range(3)]
+    dur_vecs, el_part = generate_partitioned_sets(durs, XENAKIS_NR_OF_SETS, event = False)
+    dyn_vecs, el_part = generate_partitioned_sets(list(d_vector), XENAKIS_NR_OF_SETS, event = False)
+
+    dur_sets = [set(l) for l in dur_vecs]
+    dyn_sets = [set(l) for l in dyn_vecs]
 
     #Conjuntos Base
     r = FullSet([SonicEvent(e, 80, 0) for e in pitch_list], set(durs), base=base, dyn_vector=d_vector)
-    a = FullSet(event_sets[0], dur_sets[0], base=base, dyn_vector=d_vectors[0])
-    b = FullSet(event_sets[1], dur_sets[1], base=base, dyn_vector=d_vectors[1])
-    c = FullSet(event_sets[2], dur_sets[2], base=base, dyn_vector=d_vectors[2])
+    a = FullSet(event_sets[0], dur_sets[0], base=base, dyn_vector=dyn_sets[0])
+    b = FullSet(event_sets[1], dur_sets[1], base=base, dyn_vector=dyn_sets[1])
+    c = FullSet(event_sets[2], dur_sets[2], base=base, dyn_vector=dyn_sets[2])
 
     na = r-a
     nb = r-b
@@ -166,12 +169,11 @@ def generate_material(config):
     '''
         Gera o material baseado no método escolhido
     '''
-    filename, size, method = config
 
-    if method=='set_oriented':
-        generate_set_oriented(filename, size)
+    if config['method'] == 'set_oriented':
+        generate_set_oriented(config['filename'], config['size'], int(config['constraint']))
     else:
-        generate_xenakis(filename, size)
+        generate_xenakis(config['filename'], config['size'])
 
 
 def main_operation(fields):
@@ -184,7 +186,7 @@ def main_operation(fields):
 
         size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
         method = 'xenakis' if fields['xenakis'] else 'set_oriented'
-        configs = (fields['filename'], size, method)
+        configs = {'filename' : fields['filename'], 'size': size, 'method' : method, 'constraint' : fields['constraint']}
 
         generate_material(configs)
 
@@ -206,8 +208,5 @@ if __name__ == '__main__':
             main_operation(values)
 
         event, values = interface.run()
-
-
-#HermoserApp().run()
 
 #TODO: Interromper botões enquanto gera material, acompanhado de aviso

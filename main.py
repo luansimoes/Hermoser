@@ -1,5 +1,5 @@
 from hermoser.herma_interface import HermaInterface, sg #HermoserApp
-from hermoser.core import HermaLikePiece, SonicEvent, EventSet, FullSet, HermaSection, SetOrientedSection, random_elements, satisfy_constraints, get_interval_vector, random_size
+from hermoser.core import *
 import random as rd
 
 def check_valid_fields(fields):
@@ -143,8 +143,10 @@ def generate_xenakis(filename, size):
     pitch_list = list(range(*k)) 
     sizes = [int(len(pitch_list)/2)-int(len(pitch_list)/12)] * 3
 
-    event_sets = [random_elements(pitch_list, s) for s in sizes]
-    a, b, c, r = (EventSet(event_sets[0]), EventSet(event_sets[1]), EventSet(event_sets[2]), EventSet(event_sets[0]+event_sets[1]+event_sets[2]))
+    #event_sets = [random_elements(pitch_list, s) for s in sizes]
+    event_sets = random_complete_sets(pitch_list, sizes)
+    a, b, c = (EventSet(event_sets[0]), EventSet(event_sets[1]), EventSet(event_sets[2]))
+    r = EventSet([SonicEvent(x, 80, 0) for x in pitch_list])
 
     na = r-a
     nb = r-b
@@ -186,6 +188,7 @@ def main_operation(fields):
 
     else:
         #TODO: Popup window ou alerta avisando os campos incorretos
+        print('NOT VALID')
         pass
 
 
@@ -197,7 +200,7 @@ if __name__ == '__main__':
     # Exibe a interface e espera por eventos
     event, values = interface.run()
     while event != sg.WINDOW_CLOSED:
-        if event == 'Gerar Material':
+        if event == 'Generate':
             main_operation(values)
 
         event, values = interface.run()

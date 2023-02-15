@@ -36,7 +36,9 @@ class HermaLikePiece:
 
         self.midi_stream.addTempo(0,0,self.tempo)
         events_list = sorted(self.events_list, key=operator.attrgetter('offset'))
-        for e in events_list:
+        for i, e in enumerate(events_list):
+            if i!= len(events_list)-1 and events_list[i].offset==events_list[i+1].offset:
+                events_list[i+1].track += 1
             self.midi_stream.addNote(e.track, e.channel, e.h+self.origin[0], e.offset, e.u+self.origin[2], e.g+self.origin[1])
         
         with open(self.file_name+".mid", "wb") as output_file:

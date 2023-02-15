@@ -12,6 +12,46 @@ def random_elements(bag, size):
         if e not in [x.h for x in output]: output.append(SonicEvent(e, 80, 0))
     return output
 
+def random_complete_sets(bag, sizes):
+    bag_aux = [x for x in bag]
+    chunks = [int(s/4) for s in sizes]
+
+    abc = rd.randint(1, chunks[0])
+    ab = rd.randint(1, 2*chunks[0]-abc)
+    ac = rd.randint(1, 3*chunks[0]-(abc+ab))
+    a = sizes[0] - (abc+ab+ac)
+
+    bc = rd.randint(1, 3*chunks[1]-(abc+ab))
+    b = sizes[1] - (abc+ab+bc)
+
+    c = sizes[2] - (abc+ac+bc)
+
+
+    parts = [abc, ab, ac, bc, a, b, c]
+    print(parts, sum(parts), len(bag))
+    part_list = []
+
+    for p in parts:
+        part = []
+        for _ in range(p):
+            part.append(bag_aux.pop(rd.randint(0, len(bag_aux)-1)))
+        part_list.append(part)
+    
+    a = part_list[0]+part_list[1]+part_list[2]+part_list[4]
+    b = part_list[0]+part_list[1]+part_list[3]+part_list[5]
+    c = part_list[0]+part_list[2]+part_list[3]+part_list[6]
+
+    a = [SonicEvent(e, 80, 0) for e in a]
+    b = [SonicEvent(e, 80, 0) for e in b]
+    c = [SonicEvent(e, 80, 0) for e in c]
+
+    return a, b, c
+
+
+
+
+
+
 def interval_class(a, b):
     a_class = a%12
     b_class = b%12

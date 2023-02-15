@@ -1,6 +1,7 @@
 import numpy as np
 import random as rd
 from .sonic_event import SonicEvent
+from math import factorial
 
 def random_size(low, high):
     return rd.randint(low, high)
@@ -48,6 +49,81 @@ def random_complete_sets(bag, sizes):
     return a, b, c
 
 
+def generate_partitioned_sets(bag, nr_of_main_sets):
+
+    nr_of_subsets = 2**nr_of_main_sets
+
+    assert nr_of_subsets <= len(bag), f'Bag should have at least many elements as the nr of subsets of {nr_of_main_sets}'
+
+    partition = random_size_partition(len(bag), nr_of_subsets)
+    all_subset_labels = list(all_subsets(nr_of_main_sets))
+
+    pitch_partition = dict()
+
+    bag_aux = [x for x in bag]
+
+    for i, size in enumerate(partition):
+        part = []
+        for _ in range(size):
+            part.append( SonicEvent( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) , 80 , 1 ))
+        
+        pitch_partition[all_subset_labels[i]] = part
+
+    sets = []
+    for i in range(nr_of_main_sets):
+
+        s = []
+        for label in pitch_partition.keys():
+
+            if str(i) in label:
+                p_list = pitch_partition[label]
+                print(i, [x.h for x in p_list])
+                s += p_list
+            
+        sets.append(s)
+
+
+    return sets, pitch_partition
+
+
+def random_size_partition(n, k):
+
+    p = []
+    n_lin = n
+
+    for k_lin in range(k, 1, -1):
+
+        size = np.random.binomial(n_lin, 1/k_lin)
+
+        if size > n_lin-k_lin + 1:
+            print(n_lin, k_lin, size)
+            size = n_lin - k_lin + 1
+
+        elif size == 0:
+            print(n_lin, k_lin, size)
+            size = 1
+
+        p.append(size)
+        n_lin -= size
+    
+    p.append(n_lin)
+    
+    rd.shuffle(p)
+
+    return p
+
+
+def all_subsets(n_sets, word = ''):
+
+    if len(word) <= n_sets:
+        yield word
+
+        start = 0 if len(word) == 0 else int(word[-1])+1
+
+        for x in range(start, n_sets):
+            yield from all_subsets(n_sets, word + str(x))
+
+
 
 
 
@@ -67,6 +143,20 @@ def get_interval_vector(pc_set):
     
     return vector
 
+def satisfy_constraints(sets, constraint):
+    iv_matrix = [get_interval_vector(s) for s in sets]
+
+    for i in range(len(iv_matrix)-1):
+        for j in range(i+1, len(iv_matrix)):
+
+            diff = sum([abs(iv_matrix[i][k] - iv_matrix[j][k]) for k in range(len(iv_matrix[0]))])
+
+            if diff<constraint:
+                return False
+    
+    return True
+            
+'''
 def satisfy_constraints(actual_set, other_sets, constraint):
     iv_matrix = [get_interval_vector(s) for s in other_sets]
     interval_vector = get_interval_vector(actual_set)
@@ -77,6 +167,7 @@ def satisfy_constraints(actual_set, other_sets, constraint):
         if diff<constraint:
             return False
     return True
+'''
 
 def truncate(number, digits) -> float:
     stepper = 10.0 ** digits
@@ -96,3 +187,10 @@ def prod(l):
     for x in l:
         p*=x
     return p
+
+def comb(n, k):
+    a, b = max(n-k, k), min(n-k, k)
+    prod = n
+    for v in range(n-1, a, -1):
+        prod *= v
+    return prod/factorial(b)

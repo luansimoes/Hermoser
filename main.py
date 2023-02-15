@@ -2,6 +2,9 @@ from hermoser.herma_interface import HermaInterface, sg #HermoserApp
 from hermoser.core import *
 import random as rd
 
+XENAKIS_NR_OF_SETS = 3
+INTERVAL_CONSTRAINT = 6
+
 def check_valid_fields(fields):
     if fields['filename'].isspace() or not fields['filename']:
         return False
@@ -100,14 +103,12 @@ def generate_set_oriented(filename, size):
     base = 2 #1.265
     d_vector = set(list(range(24)))
 
-    octave_sets = [random_elements(octave, sizes[0])]
+    #octave_sets = [random_elements(octave, sizes[0])]
+    #TODO: Allow different numbers of sets
+    octave_sets, part_dict = generate_partitioned_sets(octave, XENAKIS_NR_OF_SETS) 
 
-    # Sorteando pcsets dentro das restrições
-    for i in range(1,3,1):
-        actual_set = random_elements(octave, sizes[i])
-        while not satisfy_constraints(actual_set, octave_sets, 6):
-            actual_set = random_elements(octave, sizes[i])
-        octave_sets.append(actual_set)
+    while not satisfy_constraints(octave_sets, INTERVAL_CONSTRAINT):
+        octave_sets, part_dict = generate_partitioned_sets(octave, XENAKIS_NR_OF_SETS)
 
     # Ampliando os conjuntos para pspace
     pitch_list = octave if size=='octave' else (list(range(24)) if size=='two_octave' else list(range(-39, 49, 1)))
@@ -115,7 +116,7 @@ def generate_set_oriented(filename, size):
     for pitch in pitch_list:
         for i, s in enumerate(octave_sets):
             if pitch%12 in [e.h for e in s]:
-                event_sets[i].append(SonicEvent(pitch, 80, 0))
+                event_sets[i].append(SonicEvent(pitch, 80, 1))
 
     dur_sets = [set(rd.choices(list(durs), k=7)) for j in range(3)]
     d_vectors = [set(rd.choices(list(range(24)), k=random_size(10, 28))) for i in range(3)]
@@ -144,9 +145,10 @@ def generate_xenakis(filename, size):
     sizes = [int(len(pitch_list)/2)-int(len(pitch_list)/12)] * 3
 
     #event_sets = [random_elements(pitch_list, s) for s in sizes]
-    event_sets = random_complete_sets(pitch_list, sizes)
+    #event_sets = random_complete_sets(pitch_list, sizes)
+    event_sets, part_dict = generate_partitioned_sets(pitch_list, XENAKIS_NR_OF_SETS)
     a, b, c = (EventSet(event_sets[0]), EventSet(event_sets[1]), EventSet(event_sets[2]))
-    r = EventSet([SonicEvent(x, 80, 0) for x in pitch_list])
+    r = EventSet([SonicEvent(x, 80, 1) for x in pitch_list])
 
     na = r-a
     nb = r-b

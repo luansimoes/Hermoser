@@ -5,46 +5,70 @@ from tkinter import Tk, font
 #from kivymd.uix.label import MDLabel
 #from kivymd.uix.button import MDRoundFlatButton
 
-kv = '''
-Screen:
-
-    MDRoundFlatButton:
-        text: "Gerar Material"
-        pos
-'''
-
-'''
-class HermoserApp(MDApp):
-    def build(self):
-        screen = Screen()
-        screen.add_widget(MDRoundFlatButton(
-            text = "Gerar Material",
-            pos_hint = {"center_x": 0.5, "center_y": 0.5},
-        ))
-        return screen
-'''
-
-# TODO: Create a Different Screen for generating as Xenakis and as SetOriented
 class HermaInterface:
     def __init__(self):
         sg.theme('DarkTanBlue')
 
-        layout = [
-            [sg.Text('Filename', size=(10,0)), sg.Input(size=(25,0), key='filename')], 
-            [sg.Text('Size', size=(10,0))], 
-            [sg.Push(), sg.Radio('12', 'type', key='octave'), sg.Radio('24', 'type', key='two_octave'), sg.Radio('88', 'type', key='88'), sg.Push()],
-            [sg.Text('Method', size=(10,0))], 
-            [sg.Push(), sg.Radio('Xenakis', 'method', key='xenakis'), sg.Radio('Set-Oriented', 'method', key='set_oriented'), sg.Push()],
-            [sg.Text('Interval Constraint', size=(10,0)), sg.Input(size=(10,0), key='constraint')],
-            [sg.Push(), sg.Button('Generate'), sg.Push()],
-        ]
-        self.window = sg.Window("Hermoser", layout, font='System')
+        self.aux_layouts = {
+            'main': [
+                [sg.Push(), sg.Text("Choose your generation method"), sg.Push()],
+                [sg.Text('', size=(0,1))],
+                [sg.Push(), sg.Button('Xenakis'), sg.Button('Set-Oriented'), sg.Push()],
+            ],
+
+            'xenakis': [
+                [sg.Text('Filename', size=(10,0)), sg.Input(size=(25,0), key='filename')],
+                [sg.Text('Size', size=(10,0))],
+                [sg.Push(), sg.Radio('12', 'type', key='octave'), sg.Radio('24', 'type', key='two_octave'), sg.Radio('88', 'type', key='88'), sg.Push()],
+                [sg.Text('', size=(0, 1))],
+                [sg.Push(), sg.Button('Generate'), sg.Push()],
+            ],
+
+            'set-oriented': [
+                [sg.Text('Filename', size=(10,1)), sg.Input(size=(25,0), key='filename')],
+                [sg.Text('Size', size=(10,0))],
+                [sg.Push(), sg.Radio('12', 'type', key='octave'), sg.Radio('24', 'type', key='two_octave'), sg.Radio('88', 'type', key='88'), sg.Push()],
+                [sg.Text('Interval Constraint', size=(15,0)), sg.Input(size=(20,0), key='constraint')],
+                [sg.Text('', size=(0, 1))],
+                [sg.Push(), sg.Button('Generate'), sg.Push()],
+            ]
+        }
+
+
+        self.layout = [
+                [sg.Frame('', 
+                    [
+                        [sg.VPush()],
+                        [sg.Column(self.aux_layouts['main'], key='-MAIN-'), 
+                            sg.Column(self.aux_layouts['xenakis'], key='-XEN-', visible=False), 
+                            sg.Column(self.aux_layouts['set-oriented'], key='-SO-', visible=False)],
+                        [sg.VPush()]
+                    ], size=(400, 200), border_width=0, element_justification='c')
+                ],
+                    
+                    [sg.Text('', size=(0, 2))],
+                    [sg.Push(), sg.Push(), sg.Button('Exit')],
+                ]
+
+        self.window = sg.Window("Hermoser", self.layout, font='System')
+        self._status = '-MAIN-'
+    
+    @property
+    def status(self):
+        return self._status
+    
+    def set_status(self, value):
+        self.window[self._status].update( visible = False )
+        self.window[value].update( visible = True)
+        self._status = value
         
-    #Fazer isso na main
+
     def run(self):
         event, values = self.window.Read()
         return event, values
 
+    def close(self):
+        self.window.close()
 
 
 '''

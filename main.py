@@ -5,15 +5,15 @@ import random as rd
 XENAKIS_NR_OF_SETS = 3
 INTERVAL_CONSTRAINT = 6
 
-def check_valid_fields(fields):
+def check_valid_fields(fields, method):
     if fields['filename'].isspace() or not fields['filename']:
         return False
     if not(fields['88'] or fields['two_octave'] or fields['octave']):
         return False
-    if not(fields['xenakis'] or fields['set_oriented']):
-        return False
-    if fields['set_oriented'] and (not fields['constraint'] or not fields['constraint'].isnumeric()):
-        return False
+    
+    if method == '-SO-':
+        if not (fields['constraint'] and fields['constraint'].isnumeric()):
+            return False
 
     return True
 
@@ -170,22 +170,22 @@ def generate_material(config):
         Gera o material baseado no método escolhido
     '''
 
-    if config['method'] == 'set_oriented':
+    if config['method'] == '-SO-':
         generate_set_oriented(config['filename'], config['size'], int(config['constraint']))
     else:
         generate_xenakis(config['filename'], config['size'])
 
 
-def main_operation(fields):
+def main_operation(fields, method):
     '''
         Método que inicializa a geração dos materiais caso os campos estejam corretamente preenchidos
     '''
-    valid = check_valid_fields(fields)
+    valid = check_valid_fields(fields, method)
+
 
     if valid:
 
         size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
-        method = 'xenakis' if fields['xenakis'] else 'set_oriented'
         configs = {'filename' : fields['filename'], 'size': size, 'method' : method, 'constraint' : fields['constraint']}
 
         generate_material(configs)
@@ -203,10 +203,19 @@ if __name__ == '__main__':
 
     # Exibe a interface e espera por eventos
     event, values = interface.run()
-    while event != sg.WINDOW_CLOSED:
+    while event not in [sg.WINDOW_CLOSED, 'Exit']:
+
         if event == 'Generate':
-            main_operation(values)
+            main_operation(values, interface.status)
+        
+        elif event == 'Xenakis':
+            interface.set_status('-XEN-')
+        
+        elif event == 'Set-Oriented':
+            interface.set_status('-SO-')
 
         event, values = interface.run()
+    
+    interface.close()
 
 #TODO: Interromper botões enquanto gera material, acompanhado de aviso

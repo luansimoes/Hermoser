@@ -6,14 +6,12 @@ XENAKIS_NR_OF_SETS = 3
 INTERVAL_CONSTRAINT = 6
 
 def check_valid_fields(fields, method):
-    if fields['filename'].isspace() or not fields['filename']:
-        return False
-    if not(fields['88'] or fields['two_octave'] or fields['octave']):
-        return False
+    assert fields['filename'] and not fields['filename'].isspace(), 'Filename cannot be empty'
     
-    if method == '-SO-':
-        if not (fields['constraint'] and fields['constraint'].isnumeric()):
-            return False
+    assert (fields['88'] or fields['two_octave'] or fields['octave']), 'Size must be chosen'
+    
+    if method == '-GEN-S':
+        assert (fields['constraint'] and fields['constraint'].isnumeric()), 'Constraint must be a number'
 
     return True
 
@@ -170,7 +168,7 @@ def generate_material(config):
         Gera o material baseado no método escolhido
     '''
 
-    if config['method'] == '-SO-':
+    if config['method'] == '-GEN-S':
         generate_set_oriented(config['filename'], config['size'], int(config['constraint']))
     else:
         generate_xenakis(config['filename'], config['size'])
@@ -180,20 +178,19 @@ def main_operation(fields, method):
     '''
         Método que inicializa a geração dos materiais caso os campos estejam corretamente preenchidos
     '''
-    valid = check_valid_fields(fields, method)
-
-
-    if valid:
+    try:
+        check_valid_fields(fields, method)
 
         size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
         configs = {'filename' : fields['filename'], 'size': size, 'method' : method, 'constraint' : fields['constraint']}
 
         generate_material(configs)
 
-    else:
-        #TODO: Popup window ou alerta avisando os campos incorretos
-        print('NOT VALID')
-        pass
+        return 'Sucessfully generated midi file'
+
+    except Exception as e:
+
+        return str(e)
 
 
 if __name__ == '__main__':
@@ -206,16 +203,20 @@ if __name__ == '__main__':
     while event not in [sg.WINDOW_CLOSED, 'Exit']:
 
         if event == 'Generate':
-            main_operation(values, interface.status)
+            interface.disable_buttons()
+            msg = main_operation(values, interface.status)
+            interface.enable_buttons()
+
+            sg.popup(msg, grab_anywhere=True)
+
+            interface.set_status('-MAIN-M')
         
         elif event == 'Xenakis':
-            interface.set_status('-XEN-')
+            interface.set_status('-GEN-X')
         
         elif event == 'Set-Oriented':
-            interface.set_status('-SO-')
+            interface.set_status('-GEN-S')
 
         event, values = interface.run()
     
     interface.close()
-
-#TODO: Interromper botões enquanto gera material, acompanhado de aviso

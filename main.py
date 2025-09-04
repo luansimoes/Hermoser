@@ -1,6 +1,7 @@
 from hermoser.herma_interface import HermaInterface, sg #HermoserApp
 from hermoser.core import *
 import random as rd
+import os
 
 XENAKIS_NR_OF_SETS = 3
 INTERVAL_CONSTRAINT = 6
@@ -194,6 +195,9 @@ def main_operation(fields, method):
 
 
 if __name__ == '__main__':
+
+    if not os.path.exists('generated_midi'):
+        os.makedirs("generated_midi")
 
     # Inicializa a Interface
     interface = HermaInterface()

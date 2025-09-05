@@ -144,10 +144,7 @@ def generate_xenakis(filename, size):
 
     k = [12] if size=='octave' else ([24] if size=='two_octave' else (-39, 49, 1)) 
     pitch_list = list(range(*k)) 
-    sizes = [int(len(pitch_list)/2)-int(len(pitch_list)/12)] * 3
-
-    #event_sets = [random_elements(pitch_list, s) for s in sizes]
-    #event_sets = random_complete_sets(pitch_list, sizes)
+    
     event_sets, part_dict = generate_partitioned_sets(pitch_list, XENAKIS_NR_OF_SETS)
     a, b, c = (EventSet(event_sets[0]), EventSet(event_sets[1]), EventSet(event_sets[2]))
     r = EventSet([SonicEvent(x, 80, 1) for x in pitch_list])
@@ -179,19 +176,17 @@ def main_operation(fields, method):
     '''
         Método que inicializa a geração dos materiais caso os campos estejam corretamente preenchidos
     '''
-    try:
-        check_valid_fields(fields, method)
-
-        size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
-        configs = {'filename' : fields['filename'], 'size': size, 'method' : method, 'constraint' : fields['constraint']}
-
-        generate_material(configs)
-
-        return 'Sucessfully generated midi file'
-
+    
+    check_valid_fields(fields, method)
+    size = 'octave' if fields['octave'] else ('two_octave' if fields['two_octave'] else '88')
+    configs = {'filename' : fields['filename'], 'size': size, 'method' : method, 'constraint' : fields['constraint']}
+    generate_material(configs)
+    return 'Sucessfully generated midi file'
+    '''
     except Exception as e:
 
         return str(e)
+    '''
 
 
 if __name__ == '__main__':

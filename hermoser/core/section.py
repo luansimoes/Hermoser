@@ -15,7 +15,7 @@ class Section:
         self.offset = offset
 
     def generate_offsets(self):
-        intervals = [int(self.temporal_rule()) for i in range(len(self.event_set))]
+        intervals = [int(self.temporal_rule()) for _ in range(len(self.event_set))]
         return intervals
 
     def generate_section(self):

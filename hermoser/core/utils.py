@@ -6,30 +6,38 @@ from math import factorial
 def random_size(low, high):
     return rd.randint(low, high)
 
-
 def generate_partitioned_sets(bag, nr_of_main_sets, event = True):
+    """
+    Partitions a given bag of elements into a number of main sets, with each possible combination of unions, intersections and complements of these main sets being non-empty.
+    Args:
+        bag (list): The list of elements to partition.
+        nr_of_main_sets (int): The number of main sets to partition the bag into.
+        event (bool, optional): If True, wraps each element in a SonicEvent object; otherwise, uses the raw element. Defaults to True.
+    Returns:
+        tuple:
+            - sets (list of lists): A list containing the main sets, each as a list of elements.
+            - el_partition (dict): A dictionary mapping region labels (as strings) to lists of elements assigned to each region.
+    Raises:
+        AssertionError: If the number of possible subsets (2**nr_of_main_sets) exceeds the number of elements in the bag.
+    Notes:
+        - The function randomly partitions the bag into subsets, then distributes elements to main sets based on subset labels.
+        - Subset labels are generated using all possible combinations of main set indices.
+    """
 
-    nr_of_subsets = 2**nr_of_main_sets
+    nr_of_regions = 2**nr_of_main_sets
 
-    assert nr_of_subsets <= len(bag), f'Bag should have at least many elements as the nr of subsets of {nr_of_main_sets}'
+    assert nr_of_regions <= len(bag), f'Bag should have at least many elements as the nr of disjoint regions in the venn diagram of {nr_of_main_sets}'
 
-    partition = random_size_partition(len(bag), nr_of_subsets)
-    all_subset_labels = list(all_subsets(nr_of_main_sets))
+    regions = generate_random_sized_partitions(bag, nr_of_regions)
+    labels = list(all_disj_region_labels(nr_of_main_sets))
 
-    el_partition = dict()
+    np.random.shuffle(labels)
 
-    bag_aux = [x for x in bag]
+    if event:
+        mapping = lambda x: SonicEvent(x, 80, 1)
+        regions = [list(map(mapping, region)) for region in regions]
 
-    for i, size in enumerate(partition):
-        part = []
-        for _ in range(size):
-
-            if event:
-                part.append( SonicEvent( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) , 80 , 1 ))
-            else:
-                part.append( bag_aux.pop( rd.randint(0, len(bag_aux)-1) ) )
-        
-        el_partition[all_subset_labels[i]] = part
+    el_partition = dict(zip(labels, regions))
 
     sets = []
     for i in range(nr_of_main_sets):
@@ -39,13 +47,39 @@ def generate_partitioned_sets(bag, nr_of_main_sets, event = True):
 
             if str(i) in label:
                 p_list = el_partition[label]
-                s += p_list
+                s.extend(p_list)
             
         sets.append(s)
 
-
     return sets, el_partition
 
+def generate_random_sized_partitions(bag, nr_of_regions):
+    '''
+    Randomly chooses the regions from the given bag, using binomial distribution in the choice of the sizes of the sets.
+    Args:
+        - bag (list): the pitches to be partitioned
+        - nr_of_regions: the number of regions that must be chosen.
+    Returns:
+        - a list of lists, having the chosen sets.
+    '''
+    bag_copy = [x for x in bag] 
+    rd.shuffle(bag_copy)
+
+    regions = []
+    nr_remaining_pitches = len(bag_copy) - nr_of_regions
+
+    total_size = 0
+    for nr_remaining_regions in range(nr_of_regions, 0, -1):
+
+        region_size = np.random.binomial(nr_remaining_pitches, 1/nr_remaining_regions) + 1 #includes the mandatory pitch
+        regions.append(bag_copy[total_size:total_size+region_size]) 
+        total_size += region_size
+        nr_remaining_pitches -= (region_size-1) #excludes the mandatory pitch
+    
+    return regions
+        
+
+'''
 def random_size_partition(n, k):
 
     p = []
@@ -71,17 +105,25 @@ def random_size_partition(n, k):
     rd.shuffle(p)
 
     return p
+'''
 
 
-def all_subsets(n_sets, word = ''):
-
+def all_disj_region_labels(n_sets, word = ''):
+    """
+    Recursively yields the labels for each disjoint region of the venn diagram for the given number of sets.
+    Args:
+        - n_sets (int): The number of sets in the venn diagram.
+        - word (str, optional): the current label.
+    Returns:
+        - generator object with every possible label (str)
+    """
     if len(word) <= n_sets:
         yield word
 
         start = 0 if len(word) == 0 else int(word[-1])+1
 
         for x in range(start, n_sets):
-            yield from all_subsets(n_sets, word + str(x))
+            yield from all_disj_region_labels(n_sets, word + str(x))
 
 
 

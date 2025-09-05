@@ -51,12 +51,12 @@ class HermaLikePiece:
         offset = 0
         for section in self.sections:
             if len(section.event_set)!=0:
-                text = m21.expressions.TextExpression('Transição')
+                #text = m21.expressions.TextExpression('Transição')
 
                 section.generate_section()
                 section.offset = offset if seq else section.offset
                 events = map(lambda e: SonicEvent(e.h, e.g, e.u, offset=e.offset+section.offset, track=e.track, channel=e.channel), section.events_list)
-                self.events_list += events
+                self.events_list.extend(events)
                 offset += section.duration
 
 
